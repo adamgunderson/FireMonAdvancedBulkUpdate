@@ -119,6 +119,7 @@ if auth_status == 'AUTHORIZED':
         ("useSpecialAccessList", "true/false"),
         ("fallbackAuthentication", "true/false"),
         ("retrieveSetSyntaxConfig", "true/false"),
+        ("logMonitoringMethod", "syslog/hitcounter"),
         ("useCLICommandGeneration", "true/false")
     ]
 
