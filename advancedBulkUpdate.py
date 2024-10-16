@@ -63,7 +63,7 @@ if auth_status == 'AUTHORIZED':
                 col1_display = f"{col1.get('vendor', 'Unknown Vendor')} - {col1.get('deviceName', 'Unknown Device Pack')} (ID: {col1['id']})"
                 col2_display = f"{col2.get('vendor', 'Unknown Vendor')} - {col2.get('deviceName', 'Unknown Device Pack')} (ID: {col2['id']})" if col2 else ""
 
-                print(f"{col1_display:<80} {col2_display}")
+                print(f"{col1_display:<55} {col2_display}")
 
             # Pagination controls
             action = input("\nSelect a device pack by entering its ID, or type 'n' for next page, 'p' for previous page: ").strip()
