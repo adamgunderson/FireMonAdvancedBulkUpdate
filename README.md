@@ -1,6 +1,7 @@
 # FireMonAdvancedBulkUpdate
 
 ## Usage Example
+```
 [admin@demo testing]$ python3 advancedBulkUpdate.py
 FireMon app server IP or FQDN (default: localhost): >>
 Username for FireMon UI account: >> adam
@@ -65,4 +66,4 @@ Attempt to update settings for Cisco - ASA - 5506X (ID: 63) resulted in status c
 Attempt to update settings for Cisco ASA - automation 2 (ID: 351) resulted in status code: 204
 Attempt to update settings for Cisco Live (ID: 1362) resulted in status code: 204
 Attempt to update settings for Cisco - RSA-CiscoASA (ID: 32) resulted in status code: 204
-
+```
