@@ -1,8 +1,16 @@
 #!/usr/bin/python
 import sys
 # Adding FireMon package path
-sys.path.append('/usr/lib/firemon/devpackfw/lib/python3.9/site-packages')
-import requests
+sys.path.append('/usr/lib/firemon/devpackfw/lib/python3.8/site-packages')
+try:
+    import requests
+except:
+    try:
+        sys.path.append('/usr/lib/firemon/devpackfw/lib/python3.9/site-packages')
+        import requests
+    except:
+        sys.path.append('/usr/lib/firemon/devpackfw/lib/python3.10/site-packages')
+        import requests
 import json
 import urllib3
 import getpass
