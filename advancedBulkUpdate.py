@@ -138,6 +138,7 @@ if auth_status == 'AUTHORIZED':
         ("logMonitoringEnabled", "true/false"),
         ("retrievalCallTimeOut", "integer"),
         ("checkForChangeEnabled", "true/false"),
+        ("checkForChangeOnChangeDetection", "true/false"),
         ("skipUserFileRetrieval", "true/false"),
         ("changeMonitoringEnabled", "true/false"),
         ("suppressFQDNCapabilities", "true/false"),
