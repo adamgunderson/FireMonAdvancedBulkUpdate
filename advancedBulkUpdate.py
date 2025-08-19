@@ -139,6 +139,7 @@ if auth_status == 'AUTHORIZED':
         ("retrievalCallTimeOut", "integer"),
         ("checkForChangeEnabled", "true/false"),
         ("checkForChangeOnChangeDetection", "true/false"),
+        ("granularChange", "true/false"),
         ("skipUserFileRetrieval", "true/false"),
         ("changeMonitoringEnabled", "true/false"),
         ("suppressFQDNCapabilities", "true/false"),
