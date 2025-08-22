@@ -160,7 +160,11 @@ if auth_status == 'AUTHORIZED':
         ("fallbackAuthentication", "true/false"),
         ("retrieveSetSyntaxConfig", "true/false"),
         ("logMonitoringMethod", "syslog/hitcounter"),
-        ("useCLICommandGeneration", "true/false")
+        ("useCLICommandGeneration", "true/false"),
+        ("secret", "string"),
+        ("tennant", "string"),
+        ("client_id", "string"),
+        ("ntpServer", "string")
     ]
 
     # Function to display the menu in two columns with larger spacing
@@ -192,6 +196,7 @@ if auth_status == 'AUTHORIZED':
             elif option_type == "integer":
                 update_data[option_name] = int(value)
             else:
+                # For string types and other types, keep as string
                 update_data[option_name] = value
         except ValueError:
             print(f"Invalid input for option {option_name}. Skipping.")
