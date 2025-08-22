@@ -162,6 +162,9 @@ if auth_status == 'AUTHORIZED':
         ("logMonitoringMethod", "syslog/hitcounter"),
         ("useCLICommandGeneration", "true/false"),
         ("secret", "string"),
+        ("key_id", "string"),
+        ("access_key", "string"),
+        ("aws_account_id", "string"),
         ("tenant", "string"),
         ("client_id", "string"),
         ("ntpServer", "string")
