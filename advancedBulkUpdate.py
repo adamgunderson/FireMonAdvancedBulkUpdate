@@ -162,7 +162,7 @@ if auth_status == 'AUTHORIZED':
         ("logMonitoringMethod", "syslog/hitcounter"),
         ("useCLICommandGeneration", "true/false"),
         ("secret", "string"),
-        ("tennant", "string"),
+        ("tenant", "string"),
         ("client_id", "string"),
         ("ntpServer", "string")
     ]
