@@ -127,7 +127,7 @@ if auth_status == 'AUTHORIZED':
 
     print(f"Selected Device Pack ID: {selected_device_pack_id}")
 
-    # Menu for update_data options
+    # Menu for update_data options - Updated with all fields including arrays
     update_options = [
         ("access_key", "string"),
         ("aws_account_id", "string"),
@@ -137,16 +137,22 @@ if auth_status == 'AUTHORIZED':
         ("checkForChangeOnChangeDetection", "true/false"),
         ("client_id", "string"),
         ("commitAdminChange", "true/false"),
+        ("default_region", "string"),
         ("deprecatedCA", "true/false"),
         ("disableVDOMCheck", "true/false"),
         ("doNotGenerateComments", "true/false"),
         ("fallbackAuthentication", "true/false"),
         ("flattenConfigFile", "true/false"),
+        ("flowLogSearchWindow", "integer"),
         ("granularChange", "true/false"),
+        ("hitCounterRetrievalInterval", "integer"),
         ("key_id", "string"),
         ("layerTwoEnforcementInterfaces", "true/false"),
+        ("limitRegions", "array"),
+        ("loggingPlugin", "string"),
         ("logMonitoringEnabled", "true/false"),
-        ("logMonitoringMethod", "syslog/hitcounter"),
+        ("logMonitoringMethod", "string"),
+        ("monitoringPlugin", "string"),
         ("noPasswordDevice", "true/false"),
         ("normalizeApplicationDerivedServices", "true/false"),
         ("ntpServer", "string"),
@@ -154,13 +160,15 @@ if auth_status == 'AUTHORIZED':
         ("recommendChangesViaTheManager", "true/false"),
         ("resetSSHKeyValue", "true/false"),
         ("retrievalCallTimeOut", "integer"),
-        ("retrievalMethod", "FromDevice/FromServer"),
+        ("retrievalMethod", "string"),
+        ("retrievalPlugin", "string"),
         ("retrieveRoutesViaApi", "true/false"),
         ("retrieveSetSyntaxConfig", "true/false"),
         ("routesFromConfig", "true/false"),
         ("scheduledRetrievalEnabled", "true/false"),
         ("secret", "string"),
         ("serverAliveInterval", "integer"),
+        ("serverCertSecurity", "string"),
         ("skipApplicationFile", "true/false"),
         ("skipDynamicBlockListRetrieval", "true/false"),
         ("skipRoute", "true/false"),
@@ -170,6 +178,8 @@ if auth_status == 'AUTHORIZED':
         ("tenant", "string"),
         ("trackUsageUsingHitCounters", "true/false"),
         ("useCLICommandGeneration", "true/false"),
+        ("use_default_region_only", "true/false"),
+        ("use_role", "true/false"),
         ("usePrivateConfig", "true/false"),
         ("useSpecialAccessList", "true/false"),
         ("versionSshFallback", "true/false")
@@ -196,25 +206,59 @@ if auth_status == 'AUTHORIZED':
                 continue
 
             option_name, option_type = update_options[idx]
-            value = input(f"Enter value for {option_name} ({option_type}): ").strip()
-
-            # Convert boolean and integer fields appropriately
-            if option_type == "true/false":
+            
+            if option_type == "array":
+                # Handle array input
+                print(f"\nEnter values for {option_name} (comma-separated):")
+                if option_name == "limitRegions":
+                    print("Example: us-east-1,us-east-2,us-west-1,us-west-2")
+                    print("Available regions: us-east-1, us-east-2, us-west-1, us-west-2, af-south-1, ap-east-1,")
+                    print("ap-south-1, ap-northeast-1, ap-northeast-2, ap-northeast-3, ap-southeast-1,")
+                    print("ap-southeast-2, ca-central-1, eu-central-1, eu-west-1, eu-west-2, eu-west-3,")
+                    print("eu-south-1, eu-north-1, me-south-1, sa-east-1, cn-north-1, cn-northwest-1,")
+                    print("us-gov-east-1, us-gov-west-1")
+                value = input(f"Enter values: ").strip()
+                # Split by comma and strip whitespace from each element
+                array_values = [v.strip() for v in value.split(",") if v.strip()]
+                update_data[option_name] = array_values
+            elif option_type == "true/false":
+                # Handle boolean input
+                value = input(f"Enter value for {option_name} (true/false): ").strip()
                 update_data[option_name] = value.lower() == "true"
             elif option_type == "integer":
+                # Handle integer input
+                value = input(f"Enter value for {option_name} (integer): ").strip()
                 update_data[option_name] = int(value)
             else:
-                # For string types and other types, keep as string
+                # Handle string input
+                if option_name == "logMonitoringMethod":
+                    print("Options: syslog, hitcounter, Hit counters")
+                elif option_name == "retrievalMethod":
+                    print("Options: FromDevice, FromServer")
+                elif option_name == "serverCertSecurity":
+                    print("Options: VERIFY_NONE, VERIFY_HOSTNAME, VERIFY_ALL")
+                value = input(f"Enter value for {option_name}: ").strip()
                 update_data[option_name] = value
         except ValueError:
             print(f"Invalid input for option {option_name}. Skipping.")
+
+    # Display the configuration that will be applied
+    print("\n" + "="*60)
+    print("Configuration to be applied:")
+    print("="*60)
+    for key, value in update_data.items():
+        if isinstance(value, list):
+            print(f"{key}: {', '.join(value)}")
+        else:
+            print(f"{key}: {value}")
+    print("="*60)
 
     # Get the total number of devices for the selected device pack
     get_num = session.get(f'https://{IP}/securitymanager/api/domain/1/device/filter?pageSize=1&filter=devicepackids={selected_device_pack_id}', verify=False)
     total_dev = get_num.json().get('total', 0)
     pages = total_dev // 1000
 
-    print(f"There are a total of {total_dev} devices that will be updated.")
+    print(f"\nThere are a total of {total_dev} devices that will be updated.")
 
     # Confirm to proceed
     answer = input("Enter y to continue: ")
