@@ -72,60 +72,139 @@ if verify_auth.status_code != 200:
 auth_status = verify_auth.json().get('authStatus', '')
 if auth_status == 'AUTHORIZED':
     print("Authenticated successfully.")
+    
+    # Ask user to choose between device packs or device groups
+    print("\n" + "="*60)
+    print("Select target type:")
+    print("1. Device Packs")
+    print("2. Device Groups")
+    print("="*60)
+    
+    target_choice = input("Enter your choice (1 or 2): ").strip()
+    
+    if target_choice == "1":
+        # Device Packs workflow (original functionality)
+        print("\nYou selected: Device Packs")
+        
+        # Pagination setup
+        page_size = 20  # 20 device packs per page
+        current_page = 0
+        total_device_packs = None
+        selected_device_pack_id = None
 
-    # Pagination setup
-    page_size = 20  # 20 device packs per page
-    current_page = 0
-    total_device_packs = None
-    selected_device_pack_id = None
+        while True:
+            # Fetch device packs from the correct endpoint (paginated)
+            print(f"\nFetching device packs (Page {current_page + 1})...")
+            device_pack_url = f"https://{IP}/securitymanager/api/plugin/list/DEVICE_PACK.json?domainId=1&page={current_page}&pageSize={page_size}&search=&showHidden=true&sort=vendor&sort=deviceName"
+            device_pack_response = session.get(device_pack_url, verify=False)
 
-    while True:
-        # Fetch device packs from the correct endpoint (paginated)
-        print(f"Fetching device packs (Page {current_page + 1})...")
-        device_pack_url = f"https://{IP}/securitymanager/api/plugin/list/DEVICE_PACK.json?domainId=1&page={current_page}&pageSize={page_size}&search=&showHidden=true&sort=vendor&sort=deviceName"
-        device_pack_response = session.get(device_pack_url, verify=False)
+            if device_pack_response.status_code == 200:
+                device_packs = device_pack_response.json().get('results', [])
+                total_device_packs = device_pack_response.json().get('total', 0)
 
-        if device_pack_response.status_code == 200:
-            device_packs = device_pack_response.json().get('results', [])
-            total_device_packs = device_pack_response.json().get('total', 0)
+                if not device_packs:
+                    print("No device packs found.")
+                    sys.exit(1)
 
-            if not device_packs:
-                print("No device packs found.")
+                # Display the device packs in two columns
+                print("\nAvailable Device Packs (Page", current_page + 1, "):")
+                for i in range(0, len(device_packs), 2):
+                    col1 = device_packs[i]
+                    col2 = device_packs[i + 1] if i + 1 < len(device_packs) else None
+                    col1_display = f"{col1.get('vendor', 'Unknown Vendor')} - {col1.get('deviceName', 'Unknown Device Pack')} (ID: {col1['id']})"
+                    col2_display = f"{col2.get('vendor', 'Unknown Vendor')} - {col2.get('deviceName', 'Unknown Device Pack')} (ID: {col2['id']})" if col2 else ""
+
+                    print(f"{col1_display:<55} {col2_display}")
+
+                # Pagination controls
+                action = input("\nSelect a device pack by entering its ID, or type 'n' for next page, 'p' for previous page: ").strip()
+
+                if action.lower() == 'n':
+                    if (current_page + 1) * page_size >= total_device_packs:
+                        print("You are already on the last page.")
+                    else:
+                        current_page += 1
+                elif action.lower() == 'p':
+                    if current_page == 0:
+                        print("You are already on the first page.")
+                    else:
+                        current_page -= 1
+                elif action.isdigit():
+                    selected_device_pack_id = action
+                    break
+                else:
+                    print("Invalid input. Please enter a valid device pack ID or 'n'/'p' for navigation.")
+            else:
+                print("Failed to retrieve device packs. Please check the API call or your permissions.")
                 sys.exit(1)
 
-            # Display the device packs in two columns
-            print("\nAvailable Device Packs (Page", current_page + 1, "):")
-            for i in range(0, len(device_packs), 2):
-                col1 = device_packs[i]
-                col2 = device_packs[i + 1] if i + 1 < len(device_packs) else None
-                col1_display = f"{col1.get('vendor', 'Unknown Vendor')} - {col1.get('deviceName', 'Unknown Device Pack')} (ID: {col1['id']})"
-                col2_display = f"{col2.get('vendor', 'Unknown Vendor')} - {col2.get('deviceName', 'Unknown Device Pack')} (ID: {col2['id']})" if col2 else ""
+        print(f"Selected Device Pack ID: {selected_device_pack_id}")
+        selected_target_id = selected_device_pack_id
+        filter_type = "devicepackids"
+        
+    elif target_choice == "2":
+        # Device Groups workflow
+        print("\nYou selected: Device Groups")
+        
+        # Pagination setup
+        page_size = 20  # 20 device groups per page
+        current_page = 0
+        total_device_groups = None
+        selected_device_group_id = None
 
-                print(f"{col1_display:<55} {col2_display}")
+        while True:
+            # Fetch device groups from the API endpoint (paginated)
+            print(f"\nFetching device groups (Page {current_page + 1})...")
+            device_group_url = f"https://{IP}/securitymanager/api/siql/devicegroup/paged-search?q=domain%7Bid%3D1%7D&page={current_page}&pageSize={page_size}&sortdir=asc&sort=name"
+            device_group_response = session.get(device_group_url, verify=False)
 
-            # Pagination controls
-            action = input("\nSelect a device pack by entering its ID, or type 'n' for next page, 'p' for previous page: ").strip()
+            if device_group_response.status_code == 200:
+                device_groups = device_group_response.json().get('results', [])
+                total_device_groups = device_group_response.json().get('total', 0)
 
-            if action.lower() == 'n':
-                if (current_page + 1) * page_size >= total_device_packs:
-                    print("You are already on the last page.")
+                if not device_groups:
+                    print("No device groups found.")
+                    sys.exit(1)
+
+                # Display the device groups in two columns
+                print("\nAvailable Device Groups (Page", current_page + 1, "):")
+                for i in range(0, len(device_groups), 2):
+                    col1 = device_groups[i]
+                    col2 = device_groups[i + 1] if i + 1 < len(device_groups) else None
+                    col1_display = f"{col1.get('name', 'Unknown Group')} (ID: {col1['id']})"
+                    col2_display = f"{col2.get('name', 'Unknown Group')} (ID: {col2['id']})" if col2 else ""
+
+                    print(f"{col1_display:<55} {col2_display}")
+
+                # Pagination controls
+                action = input("\nSelect a device group by entering its ID, or type 'n' for next page, 'p' for previous page: ").strip()
+
+                if action.lower() == 'n':
+                    if (current_page + 1) * page_size >= total_device_groups:
+                        print("You are already on the last page.")
+                    else:
+                        current_page += 1
+                elif action.lower() == 'p':
+                    if current_page == 0:
+                        print("You are already on the first page.")
+                    else:
+                        current_page -= 1
+                elif action.isdigit():
+                    selected_device_group_id = action
+                    break
                 else:
-                    current_page += 1
-            elif action.lower() == 'p':
-                if current_page == 0:
-                    print("You are already on the first page.")
-                else:
-                    current_page -= 1
-            elif action.isdigit():
-                selected_device_pack_id = action
-                break
+                    print("Invalid input. Please enter a valid device group ID or 'n'/'p' for navigation.")
             else:
-                print("Invalid input. Please enter a valid device pack ID or 'n'/'p' for navigation.")
-        else:
-            print("Failed to retrieve device packs. Please check the API call or your permissions.")
-            sys.exit(1)
+                print("Failed to retrieve device groups. Please check the API call or your permissions.")
+                sys.exit(1)
 
-    print(f"Selected Device Pack ID: {selected_device_pack_id}")
+        print(f"Selected Device Group ID: {selected_device_group_id}")
+        selected_target_id = selected_device_group_id
+        filter_type = "devicegroupids"
+        
+    else:
+        print("Invalid choice. Please run the script again and select 1 or 2.")
+        sys.exit(1)
 
     # Menu for update_data options - Updated with all fields including arrays
     update_options = [
@@ -253,8 +332,14 @@ if auth_status == 'AUTHORIZED':
             print(f"{key}: {value}")
     print("="*60)
 
-    # Get the total number of devices for the selected device pack
-    get_num = session.get(f'https://{IP}/securitymanager/api/domain/1/device/filter?pageSize=1&filter=devicepackids={selected_device_pack_id}', verify=False)
+    # Get the total number of devices for the selected target
+    if target_choice == "1":
+        # Device pack filter
+        get_num = session.get(f'https://{IP}/securitymanager/api/domain/1/device/filter?pageSize=1&filter={filter_type}={selected_target_id}', verify=False)
+    else:
+        # Device group - use SIQL search
+        get_num = session.get(f'https://{IP}/securitymanager/api/siql/device/paged-search?q=devicegroup%7Bid%3D{selected_target_id}%7D&page=0&pageSize=1', verify=False)
+    
     total_dev = get_num.json().get('total', 0)
     pages = total_dev // 1000
 
@@ -265,11 +350,22 @@ if auth_status == 'AUTHORIZED':
     if answer.lower() == "y":
         for page in range(pages + 1):
             print(f"Running update script against page {page + 1} of {pages + 1}")
-            get_data = session.get(f'https://{IP}/securitymanager/api/domain/1/device/filter?page={page}&pageSize=1000&filter=devicepackids={selected_device_pack_id}', verify=False)
+            
+            if target_choice == "1":
+                # Device pack filter
+                get_data = session.get(f'https://{IP}/securitymanager/api/domain/1/device/filter?page={page}&pageSize=1000&filter={filter_type}={selected_target_id}', verify=False)
+            else:
+                # Device group - use SIQL search
+                get_data = session.get(f'https://{IP}/securitymanager/api/siql/device/paged-search?q=devicegroup%7Bid%3D{selected_target_id}%7D&page={page}&pageSize=1000', verify=False)
 
             for item in get_data.json().get('results', []):
                 # Update device settings
-                item["extendedSettingsJson"].update(update_data)
+                if "extendedSettingsJson" in item:
+                    item["extendedSettingsJson"].update(update_data)
+                else:
+                    # Some devices might not have extendedSettingsJson, create it
+                    item["extendedSettingsJson"] = update_data
+                    
                 payload = json.dumps(item)
                 device_id = item['id']
                 devicename = item['name']
