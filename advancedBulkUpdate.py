@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# advancedBulkUpdate.py
 import sys
 import os
 import importlib.util
@@ -359,19 +360,38 @@ if auth_status == 'AUTHORIZED':
                 get_data = session.get(f'https://{IP}/securitymanager/api/siql/device/paged-search?q=devicegroup%7Bid%3D{selected_target_id}%7D&page={page}&pageSize=1000', verify=False)
 
             for item in get_data.json().get('results', []):
-                # Update device settings
-                if "extendedSettingsJson" in item:
-                    item["extendedSettingsJson"].update(update_data)
-                else:
-                    # Some devices might not have extendedSettingsJson, create it
-                    item["extendedSettingsJson"] = update_data
-                    
-                payload = json.dumps(item)
                 device_id = item['id']
                 devicename = item['name']
+                
+                # For device groups, fetch the full device details to ensure we have all required fields
+                if target_choice == "2":
+                    # Get the complete device information from the device API
+                    device_response = session.get(f'https://{IP}/securitymanager/api/domain/1/device/{device_id}', verify=False)
+                    
+                    if device_response.status_code == 200:
+                        # Use the full device data instead of the SIQL result
+                        item = device_response.json()
+                    else:
+                        print(f"Failed to fetch details for {devicename} (ID: {device_id}) - Status code: {device_response.status_code}")
+                        continue
+                
+                # Update device settings
+                if "extendedSettingsJson" not in item:
+                    item["extendedSettingsJson"] = {}
+                
+                item["extendedSettingsJson"].update(update_data)
+                
+                payload = json.dumps(item)
 
                 updatedevice = session.put(f'https://{IP}/securitymanager/api/domain/1/device/{device_id}?manualRetrieval=false', data=payload, verify=False)
-                print(f"Attempt to update settings for {devicename} (ID: {device_id}) resulted in status code: {updatedevice.status_code}")
+                
+                # Check for successful status codes (200-299 range)
+                if 200 <= updatedevice.status_code < 300:
+                    print(f"Successfully updated settings for {devicename} (ID: {device_id}) - Status code: {updatedevice.status_code}")
+                else:
+                    print(f"Failed to update {devicename} (ID: {device_id}) - Status code: {updatedevice.status_code}")
+                    if updatedevice.text:
+                        print(f"  Error details: {updatedevice.text}")
     else:
         print("Operation cancelled.")
 else:
