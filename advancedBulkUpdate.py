@@ -213,6 +213,7 @@ if auth_status == 'AUTHORIZED':
         ("aws_account_id", "string"),
         ("batchConfigRetrieval", "true/false"),
         ("changeMonitoringEnabled", "true/false"),
+        ("checkForChange.intervalInMinutes", "integer"), 
         ("checkForChangeEnabled", "true/false"),
         ("checkForChangeOnChangeDetection", "true/false"),
         ("client_id", "string"),
