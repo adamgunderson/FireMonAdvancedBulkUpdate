@@ -2,51 +2,40 @@
 # advancedBulkUpdate.py
 import sys
 import os
-import importlib.util
+import json
+import getpass
+import time
 
-def ensure_module(module_name):
-    """Dynamically import a module by searching for it in potential site-packages locations"""
-    # First try the normal import in case it's already in the path
-    try:
-        return __import__(module_name)
-    except ImportError:
-        pass
-    
-    # Get the current Python version
-    py_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-    
-    # Create a list of potential paths to check
-    base_path = '/usr/lib/firemon/devpackfw/lib'
-    potential_paths = [
-        # Current Python version
-        f"{base_path}/python{py_version}/site-packages",
-        # Exact Python version with patch
-        f"{base_path}/python{sys.version.split()[0]}/site-packages",
-        # Try a range of nearby versions (for future-proofing)
-        *[f"{base_path}/python3.{i}/site-packages" for i in range(8, 20)]
+try:
+    import requests
+except ImportError:
+    # Search known FireMon site-packages paths across versions
+    _search_bases = [
+        "/usr/lib/firemon/devpackfw/lib",   # Legacy FireMon
+        "/usr/lib64/fmos/lib",              # FMOS-based installs
     ]
-    
-    # Try each path
-    for path in potential_paths:
-        if os.path.exists(path):
-            if path not in sys.path:
-                sys.path.append(path)
-            try:
-                return __import__(module_name)
-            except ImportError:
-                continue
-    
-    # If we get here, we couldn't find the module
-    raise ImportError(f"Could not find module {module_name} in any potential site-packages location")
+    for base in _search_bases:
+        if not os.path.isdir(base):
+            continue
+        for entry in os.listdir(base):
+            if "python" in entry:
+                sp = os.path.join(base, entry, "site-packages")
+                if os.path.isdir(sp) and sp not in sys.path:
+                    sys.path.insert(0, sp)
+    # Hardcoded paths for newer FireMon releases
+    for p in (
+        "/usr/lib64/support-python/lib64/python3.12/site-packages",
+        "/usr/lib64/support-python/lib/python3.12/site-packages",
+    ):
+        if os.path.isdir(p) and p not in sys.path:
+            sys.path.insert(0, p)
+    try:
+        import requests
+    except ImportError:
+        print("Cannot find requests module in any known site-packages location.")
+        sys.exit(1)
 
-# Import required modules
-requests = ensure_module("requests")
-json = ensure_module("json")
-urllib3 = ensure_module("urllib3")
-getpass = ensure_module("getpass")
-time = ensure_module("time")
-
-# Continue with the rest of your script...
+import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Default FQDN as localhost
