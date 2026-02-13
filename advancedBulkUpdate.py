@@ -254,6 +254,7 @@ if auth_status == 'AUTHORIZED':
         ("skipDynamicBlockListRetrieval", "true/false"),
         ("skipRoute", "true/false"),
         ("skipUserFileRetrieval", "true/false"),
+        ("syslogMatchNames", "dynamic"),
         ("supportsFQDN", "true/false"),
         ("suppressFQDNCapabilities", "true/false"),
         ("tenant", "string"),
@@ -279,6 +280,7 @@ if auth_status == 'AUTHORIZED':
     selected_options = input("\nEnter the numbers of the options you want to configure (e.g., 1,3,5): ").split(",")
 
     update_data = {}
+    dynamic_fields = set()
     for option in selected_options:
         try:
             idx = int(option.strip()) - 1
@@ -288,7 +290,11 @@ if auth_status == 'AUTHORIZED':
 
             option_name, option_type = update_options[idx]
             
-            if option_type == "array":
+            if option_type == "dynamic":
+                # Dynamic field - value will be set per-device during update
+                print(f"{option_name} will be dynamically set to each device's name.")
+                dynamic_fields.add(option_name)
+            elif option_type == "array":
                 # Handle array input
                 print(f"\nEnter values for {option_name} (comma-separated):")
                 if option_name == "limitRegions":
@@ -332,6 +338,8 @@ if auth_status == 'AUTHORIZED':
             print(f"{key}: {', '.join(value)}")
         else:
             print(f"{key}: {value}")
+    for field in dynamic_fields:
+        print(f"{field}: <dynamic - will use each device's name>")
     print("="*60)
 
     # Get the total number of devices for the selected target
@@ -376,10 +384,14 @@ if auth_status == 'AUTHORIZED':
                         print(f"Failed to fetch details for {devicename} (ID: {device_id}) - Status code: {device_response.status_code}")
                         continue
                 
+                # Handle dynamic syslogMatchNames - set to device name
+                if "syslogMatchNames" in dynamic_fields:
+                    item["syslogMatchNames"] = [devicename]
+
                 # Update device settings
                 if "extendedSettingsJson" not in item:
                     item["extendedSettingsJson"] = {}
-                
+
                 item["extendedSettingsJson"].update(update_data)
                 
                 payload = json.dumps(item)
