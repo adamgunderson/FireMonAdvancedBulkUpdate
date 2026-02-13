@@ -336,8 +336,8 @@ if auth_status == 'AUTHORIZED':
         # Device pack filter
         get_num = session.get(f'https://{IP}/securitymanager/api/domain/1/device/filter?pageSize=1&filter={filter_type}={selected_target_id}', verify=False)
     else:
-        # Device group - use SIQL search
-        get_num = session.get(f'https://{IP}/securitymanager/api/siql/device/paged-search?q=devicegroup%7Bid%3D{selected_target_id}%7D&page=0&pageSize=1', verify=False)
+        # Device group - use direct device group endpoint (SIQL may not index all devices)
+        get_num = session.get(f'https://{IP}/securitymanager/api/domain/1/devicegroup/{selected_target_id}/device?page=0&pageSize=1', verify=False)
     
     total_dev = get_num.json().get('total', 0)
     pages = total_dev // 1000
@@ -354,24 +354,12 @@ if auth_status == 'AUTHORIZED':
                 # Device pack filter
                 get_data = session.get(f'https://{IP}/securitymanager/api/domain/1/device/filter?page={page}&pageSize=1000&filter={filter_type}={selected_target_id}', verify=False)
             else:
-                # Device group - use SIQL search
-                get_data = session.get(f'https://{IP}/securitymanager/api/siql/device/paged-search?q=devicegroup%7Bid%3D{selected_target_id}%7D&page={page}&pageSize=1000', verify=False)
+                # Device group - use direct device group endpoint (returns full device data)
+                get_data = session.get(f'https://{IP}/securitymanager/api/domain/1/devicegroup/{selected_target_id}/device?page={page}&pageSize=1000', verify=False)
 
             for item in get_data.json().get('results', []):
                 device_id = item['id']
                 devicename = item['name']
-                
-                # For device groups, fetch the full device details to ensure we have all required fields
-                if target_choice == "2":
-                    # Get the complete device information from the device API
-                    device_response = session.get(f'https://{IP}/securitymanager/api/domain/1/device/{device_id}', verify=False)
-                    
-                    if device_response.status_code == 200:
-                        # Use the full device data instead of the SIQL result
-                        item = device_response.json()
-                    else:
-                        print(f"Failed to fetch details for {devicename} (ID: {device_id}) - Status code: {device_response.status_code}")
-                        continue
                 
                 # Handle dynamic syslogMatchNames - set to device name
                 if "syslogMatchNames" in dynamic_fields:
